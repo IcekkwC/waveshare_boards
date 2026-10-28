@@ -9,6 +9,7 @@
 
 ```text
 boards/
+  esp32_s3_lr1121_epaper_2_9/
   esp32_s3_lr1121_oled_1_54_xf/
   esp32_s3_touch_lcd_7/
   esp32_s3_touch_amoled_1_75c/
@@ -27,6 +28,43 @@ boards/
 托管安装与覆盖依赖从包根目录开始扫描，但仓库结构也必须兼容本地克隆。
 `_boards` 后缀能够通过该版本对覆盖依赖名称的筛选，无需修改上级组件或传入 customer-path 参数。
 依据见固定版本的[扫描实现](https://github.com/espressif/esp-board-manager/blob/2beb9b22b0892b343bd555a1ebc9929a7edce8fc/generators/config_generator.py)。
+
+## LR1121 ePaper 2.9 定义范围
+
+`esp32_s3_lr1121_epaper_2_9` 导入产品原有示例板卡配置中的三份 YAML。
+已公开的[产品示例](https://github.com/waveshareteam/ESP32-S3-LR1121-ePaper-2.9/blob/4aa6c326ca3a23317b180c86bbaea15d3327386f/examples/esp-idf/README.md#board-manager-integration)
+通过 `waveshare/waveshare_boards` 使用此配置。配置描述 ESP32-S3、兼容 SSD16xx 的
+2.9 英寸电子纸、LR1121 无线、PCF85063A RTC、AXP2602 电量计、一颗 WS2812 状态灯和显示电源控制。
+
+下列数值是配置参考，不代表已经完成原理图核对：
+
+| 接口 | 配置的 GPIO / 参数 |
+| --- | --- |
+| I2C | SDA 13、SCL 14；RTC 地址 `0x51`，电量计地址 `0x62` |
+| 共用 SPI2 | SCLK 40、MOSI 45、MISO 46；显示 10 MHz，无线 8 MHz |
+| 电子纸 | BUSY 8、复位 9、DC 17、CS 18；电源 GPIO38，高电平有效 |
+| LR1121 | DIO1 6、NSS 42、复位 39、BUSY 41 |
+| 其他 | RTC 中断 7；WS2812 GPIO21，一颗 GRB 灯；BOOT 输入 GPIO0 |
+
+`status_led` 使用 Board Manager 原生 RMT `led_strip` 设备。
+它与四个自定义设备（`epaper_ssd16xx`、`rtc_pcf85063a`、`bat_axp2602`、
+`radio_lr1121`）均保留 `init_skip: true`，需要显式初始化。
+自定义设备还需要应用提供并注册初始化/反初始化适配代码及驱动依赖，
+本组件包未包含这些代码；仅有 YAML 不会实现显示刷新或无线通信。
+电子纸与无线共用 `spi_shared`，分别使用独立片选。
+
+`epaper_power_ctrl` 使用原生 GPIO 电源控制设备，**没有**跳过初始化，
+其 GPIO38 默认输出高电平；显示设备通过 `power_ctrl_device` 引用它。
+应用启动和休眠时需考虑这一电源行为。BOOT 仅声明为 GPIO，未定义按键设备或 SD 卡设备。
+AXP2602 的 10 mΩ 采样电阻值是配置默认值，仍需核对实装硬件。
+
+产品仓库已公开[硬件说明](https://github.com/waveshareteam/ESP32-S3-LR1121-ePaper-2.9/blob/4aa6c326ca3a23317b180c86bbaea15d3327386f/docs/hardware-facts.zh-CN.md)
+和 [Rev1.1 原理图](https://github.com/waveshareteam/ESP32-S3-LR1121-ePaper-2.9/blob/4aa6c326ca3a23317b180c86bbaea15d3327386f/hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Schematics.pdf)。
+上述 GPIO 分配与硬件说明一致；本次导入未完成完整原理图审计或实机验证，
+具体 PCB 版本、显示/供电时序、无线配置及电量测量仍需分别验证。
+虽然设备名为 `epaper_power_ctrl`，GPIO38 实际控制电子纸、无线、WS2812 和 microSD 的共用电源域。
+README 使用已发布的[产品图片](https://raw.githubusercontent.com/waveshareteam/ESP32-S3-LR1121-ePaper-2.9/4aa6c326ca3a23317b180c86bbaea15d3327386f/docs/images/ESP32-S3-LR1121-ePaper-2.9-details-5-2.webp)，
+固定到产品仓库提交 `4aa6c326ca3a23317b180c86bbaea15d3327386f`。
 
 ## LR1121 OLED 1.54 XF 定义范围
 

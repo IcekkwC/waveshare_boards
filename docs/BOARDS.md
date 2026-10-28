@@ -9,6 +9,7 @@ is `waveshare/waveshare_boards`. Keep all definitions in:
 
 ```text
 boards/
+  esp32_s3_lr1121_epaper_2_9/
   esp32_s3_lr1121_oled_1_54_xf/
   esp32_s3_touch_lcd_7/
   esp32_s3_touch_amoled_1_75c/
@@ -30,6 +31,50 @@ but the layout must also work for local clones. The underscore suffix `_boards`
 passes this version's override-dependency name filter. No upstream patch or
 customer-path argument is needed. See the pinned
 [discovery implementation](https://github.com/espressif/esp-board-manager/blob/2beb9b22b0892b343bd555a1ebc9929a7edce8fc/generators/config_generator.py).
+
+## LR1121 ePaper 2.9 definition scope
+
+`esp32_s3_lr1121_epaper_2_9` imports the three YAML files from the product's
+original example board profile. The published [product examples](https://github.com/waveshareteam/ESP32-S3-LR1121-ePaper-2.9/blob/4aa6c326ca3a23317b180c86bbaea15d3327386f/examples/esp-idf/README.md#board-manager-integration)
+consume this profile through `waveshare/waveshare_boards`. The profile describes
+an ESP32-S3, an SSD16xx-compatible 2.9-inch e-paper device, LR1121 radio,
+PCF85063A RTC, AXP2602 battery gauge, one WS2812 status LED and display power control.
+
+The following values are configuration references, not verified schematic results:
+
+| Interface | Configured GPIOs / parameters |
+| --- | --- |
+| I2C | SDA 13, SCL 14; RTC address `0x51`, battery gauge address `0x62` |
+| Shared SPI2 | SCLK 40, MOSI 45, MISO 46; display 10 MHz, radio 8 MHz |
+| E-paper | BUSY 8, reset 9, DC 17, CS 18; power GPIO 38, active high |
+| LR1121 | DIO1 6, NSS 42, reset 39, BUSY 41 |
+| Other | RTC interrupt 7; WS2812 GPIO 21, one GRB LED; BOOT input GPIO 0 |
+
+`status_led` uses Board Manager's native RMT `led_strip` device.
+It and the four custom devices (`epaper_ssd16xx`, `rtc_pcf85063a`,
+`bat_axp2602`, `radio_lr1121`) retain `init_skip: true` and require explicit
+initialization. Applications must provide and register initialization/deinitialization
+adapters and their driver dependencies for the custom devices. These adapters are
+not included in this pack; the YAML alone does not implement display refresh or
+radio communication. Both devices share `spi_shared` and use separate chip selects.
+
+`epaper_power_ctrl` uses the native GPIO power-control device and does **not** skip
+initialization; its GPIO 38 default is high. The display references it through
+`power_ctrl_device`. Applications must account for this power behavior during
+startup and sleep. BOOT is only a GPIO declaration; no button device or SD card
+device is defined. The AXP2602 sense-resistor value of 10 mΩ is a configuration
+default that still needs checking against the installed hardware.
+
+The published [hardware reference](https://github.com/waveshareteam/ESP32-S3-LR1121-ePaper-2.9/blob/4aa6c326ca3a23317b180c86bbaea15d3327386f/docs/hardware-facts.zh-CN.md)
+and [Rev1.1 schematic](https://github.com/waveshareteam/ESP32-S3-LR1121-ePaper-2.9/blob/4aa6c326ca3a23317b180c86bbaea15d3327386f/hardware/schematics/ESP32-S3-LR1121-ePaper-2.9-XF-Schematics.pdf)
+are available in the product repository. The GPIO assignments above agree with
+that hardware reference; this import has not undergone a full schematic audit
+or physical-board validation. Verify the exact PCB revision, display/power timing,
+radio configuration and battery measurement separately. GPIO 38 controls a shared
+power domain for the display, radio, WS2812 and microSD, despite the device name
+`epaper_power_ctrl`.
+The README uses the published [product image](https://raw.githubusercontent.com/waveshareteam/ESP32-S3-LR1121-ePaper-2.9/4aa6c326ca3a23317b180c86bbaea15d3327386f/docs/images/ESP32-S3-LR1121-ePaper-2.9-details-5-2.webp),
+pinned to product-repository commit `4aa6c326ca3a23317b180c86bbaea15d3327386f`.
 
 ## LR1121 OLED 1.54 XF definition scope
 

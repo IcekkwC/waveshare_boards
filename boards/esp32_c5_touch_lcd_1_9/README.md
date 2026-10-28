@@ -18,9 +18,11 @@ not implicitly initialize the display, sensors, storage or battery gauge.
 Reference: [product documentation](https://www.waveshare.com/wiki/ESP32-C5-Touch-LCD-1.9).
 Pin assignments were compared with the supplied product schematic. LCD controller,
 visible geometry, gap and touch compatibility retain the product implementation;
-physical confirmation remains pending. Flash/PSRAM and application features are
+the board owner has confirmed display, touch, sensor, storage and sleep/wakeup
+functionality using the product firmware on the correct ESP32-C5 rev v1.0 board.
+These observations do not establish a manufacturer-approved panel specification. Flash/PSRAM and application features are
 configured by the consuming application, not inferred from profile generation.
 
 Validation and migration: this change adds a profile and does not certify physical
-operation. The product repository must retain its local definition until this PR
+operation of arbitrary consuming applications. The product repository must retain its local definition until this PR
 is merged, the component registry publishes it and consuming application tests pass.
